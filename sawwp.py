@@ -3,10 +3,11 @@ import pandas as pd
 import numpy as np
 
 st.set_page_config(page_title="SAW & WP Cloud Computing", layout="wide")
-st.title("Analisis Metode SAW & WP untuk Pemilihan Layanan Cloud Computing")
+st.title("☁️ Analisis Metode SAW & WP untuk Pemilihan Layanan Cloud Computing")
+st.markdown("Aplikasi ini membandingkan hasil perangkingan layanan Cloud Computing menggunakan metode **Simple Additive Weighting (SAW)** dan **Weighted Product (WP)**.")
 
 # ============================================================
-# 1. DEFINISI KRITERIA (Sama seperti sebelumnya)
+# 1. DEFINISI KRITERIA
 # ============================================================
 kriteria = ["C1", "C2", "C3", "C4"]
 nama_kriteria = {
@@ -16,9 +17,21 @@ nama_kriteria = {
     "C4": "Skalabilitas"
 }
 atribut = {"C1": "cost", "C2": "benefit", "C3": "benefit", "C4": "benefit"}
-
 # Bobot Normalisasi (wj) dari Excel: 0.35, 0.3, 0.15, 0.2
 bobot = {"C1": 0.35, "C2": 0.30, "C3": 0.15, "C4": 0.20}
+
+# Tampilkan Ringkasan Kriteria
+st.header("📋 Definisi Kriteria")
+st.markdown("Berikut adalah kriteria yang digunakan beserta bobot dan tipenya:")
+
+# Buat DataFrame untuk Kriteria
+df_kriteria = pd.DataFrame({
+    "Kode": kriteria,
+    "Nama Kriteria": [nama_kriteria[c] for c in kriteria],
+    "Atribut": [atribut[c].capitalize() for c in kriteria],
+    "Bobot ($w_j$)": [bobot[c] for c in kriteria]
+})
+st.dataframe(df_kriteria.set_index("Kode"), use_container_width=True)
 
 # ============================================================
 # 2. FUNGSI KONVERSI NILAI CRIPS (Disesuaikan ke 1, 2, 3, 4)
@@ -28,100 +41,138 @@ def konversi_crips(kode, nilai):
     Konversi nilai crips (raw data) ke nilai bobot (1, 2, 3, 4).
     """
     # C1 Biaya (Cost) - Input: Harga ($/bln)
-    # Rentang Cost: Semakin rendah harga, semakin tinggi bobot (4)
     if kode == "C1":
-        if nilai <= 50: return 4 # Sangat Murah -> 4
-        if nilai <= 100: return 3 # Murah (50 < Harga <= 100) -> 3
-        if nilai <= 150: return 2 # Cukup Mahal (100 < Harga <= 150) -> 2
-        return 1 # Mahal/Sangat Mahal (Harga > 150) -> 1
+        if nilai <= 50: return 4
+        if nilai <= 100: return 3
+        if nilai <= 150: return 2
+        return 1
 
     # C2, C3, C4 (Benefit) - Input: Skor (0-100)
-    # Rentang Benefit: Semakin tinggi skor, semakin tinggi bobot (4)
     if kode in ["C2", "C3", "C4"]:
-        if nilai >= 90: return 4 # Sangat Baik (Skor >= 90) -> 4
-        if nilai >= 80: return 3  # Baik (80 <= Skor < 90) -> 3
-        if nilai >= 60: return 2  # Cukup (60 <= Skor < 80) -> 2
-        return 1 # Kurang (Skor < 60) -> 1
+        if nilai >= 90: return 4
+        if nilai >= 80: return 3
+        if nilai >= 60: return 2
+        return 1
 
     return None
 
 # ============================================================
 # INPUT JUMLAH ALTERNATIF
 # ============================================================
-st.subheader("Input Alternatif yang Akan Dianalisis")
+st.header("📝 Input Data Alternatif")
 
-jumlah_alt = st.selectbox("Jumlah Alternatif:", [1, 2, 3, 4, 5], index=4)
+col1_jumlah, col2_kosong = st.columns([1, 3])
+with col1_jumlah:
+    jumlah_alt = st.selectbox("Jumlah Alternatif:", [1, 2, 3, 4, 5], index=4)
+
+st.subheader("Masukkan Detail Setiap Alternatif:")
 
 # DataFrame penampung
 data_input = []
 
-for i in range(jumlah_alt):
-    st.markdown(f"### Alternatif A{i+1}")
-    nama = st.text_input(f"Nama Alternatif A{i+1}", key=f"nama_{i}")
+# Kontainer untuk input alternatif
+input_container = st.container()
 
-    # C1 Biaya ($/bln)
-    c1_harga = st.number_input(
-        f"C1 Biaya ($\$/bulan)",
-        min_value=0.0,
-        step=1.0,
-        format="%.2f",
-        key=f"c1_{i}"
-    )
-
-    # C2 Kinerja (Skor 0-100)
-    c2_skor = st.number_input(
-        f"C2 Kinerja (Skor 0-100)",
-        min_value=0,
-        max_value=100,
-        step=1,
-        key=f"c2_{i}"
-    )
+with input_container:
+    cols = st.columns(jumlah_alt)
     
-    # C3 Keamanan (Skor 0-100)
-    c3_skor = st.number_input(
-        f"C3 Keamanan (Skor 0-100)",
-        min_value=0,
-        max_value=100,
-        step=1,
-        key=f"c3_{i}"
-    )
-    
-    # C4 Skalabilitas (Skor 0-100)
-    c4_skor = st.number_input(
-        f"C4 Skalabilitas (Skor 0-100)",
-        min_value=0,
-        max_value=100,
-        step=1,
-        key=f"c4_{i}"
-    )
+    for i in range(jumlah_alt):
+        with cols[i]:
+            st.markdown(f"### Alternatif A{i+1}")
+            
+            # Use a box/container for visual grouping
+            with st.container(border=True):
+                nama = st.text_input(f"Nama Alternatif A{i+1}", key=f"nama_{i}", value=f"Layanan {i+1}")
 
-    data_input.append([
-        nama,
-        konversi_crips("C1", c1_harga),
-        konversi_crips("C2", c2_skor),
-        konversi_crips("C3", c3_skor),
-        konversi_crips("C4", c4_skor),
-    ])
+                st.markdown("**Nilai Raw Data (Crips)**")
 
+                # C1 Biaya ($/bln)
+                c1_harga = st.number_input(
+                    f"C1: {nama_kriteria['C1']} ($\$/bulan)",
+                    min_value=0.0,
+                    step=1.0,
+                    format="%.2f",
+                    key=f"c1_{i}",
+                    value=float(np.random.randint(40, 200)) # Nilai acak untuk contoh
+                )
+
+                # C2 Kinerja (Skor 0-100)
+                c2_skor = st.slider(
+                    f"C2: {nama_kriteria['C2']} (Skor 0-100)",
+                    min_value=0,
+                    max_value=100,
+                    step=1,
+                    key=f"c2_{i}",
+                    value=np.random.randint(60, 100) # Nilai acak untuk contoh
+                )
+                
+                # C3 Keamanan (Skor 0-100)
+                c3_skor = st.slider(
+                    f"C3: {nama_kriteria['C3']} (Skor 0-100)",
+                    min_value=0,
+                    max_value=100,
+                    step=1,
+                    key=f"c3_{i}",
+                    value=np.random.randint(60, 100) # Nilai acak untuk contoh
+                )
+                
+                # C4 Skalabilitas (Skor 0-100)
+                c4_skor = st.slider(
+                    f"C4: {nama_kriteria['C4']} (Skor 0-100)",
+                    min_value=0,
+                    max_value=100,
+                    step=1,
+                    key=f"c4_{i}",
+                    value=np.random.randint(60, 100) # Nilai acak untuk contoh
+                )
+
+                data_input.append([
+                    nama,
+                    konversi_crips("C1", c1_harga),
+                    konversi_crips("C2", c2_skor),
+                    konversi_crips("C3", c3_skor),
+                    konversi_crips("C4", c4_skor),
+                ])
+
+st.markdown("---")
 
 # ============================================================
 # HITUNG SAW & WP
 # ============================================================
-if st.button("Hitung SAW dan WP"):
+if st.button("🚀 Mulai Perhitungan SAW dan WP", type="primary"):
     df = pd.DataFrame(data_input, columns=["Alternatif"] + kriteria)
-    st.subheader("📌 Tabel Nilai Crips (1 - 4)")
     
     # Filter dan tampilkan hanya data dengan nilai crips valid
     df_valid = df.dropna(subset=kriteria)
-    st.dataframe(df_valid)
+    
+    if df_valid.empty:
+        st.warning("Tidak ada data alternatif yang valid. Pastikan semua input terisi.")
+        st.stop()
+
+    st.subheader("✅ Matriks Keputusan Berdasarkan Nilai Crips (1 - 4)")
+    # Ganti nama kolom C1, C2, dst. dengan nama kriteria
+    df_crips_display = df_valid.rename(columns=nama_kriteria).set_index("Alternatif")
+    df_crips_display.columns.name = "Kriteria"
+    st.dataframe(df_crips_display)
+
+    st.markdown("---")
 
     # ============================================================
     # -------------------------- SAW -----------------------------
     # ============================================================
-    st.header("📘 Perhitungan Metode SAW")
+    st.header("📘 Perhitungan Metode Simple Additive Weighting (SAW)")
 
     # --- Normalisasi SAW ---
-    st.subheader("Tahap Normalisasi SAW")
+    st.subheader("Tahap 1: Normalisasi Matriks Keputusan ($R$)")
+    st.markdown("Nilai normalisasi $r_{ij}$ dihitung dengan rumus:")
+    
+    col_saw_rumus1, col_saw_rumus2 = st.columns(2)
+    with col_saw_rumus1:
+        st.markdown("Untuk kriteria **Benefit** (C2, C3, C4):")
+        st.latex(r'''r_{ij} = \frac{x_{ij}}{\max_i(x_{ij})}''')
+    with col_saw_rumus2:
+        st.markdown("Untuk kriteria **Cost** (C1):")
+        st.latex(r'''r_{ij} = \frac{\min_i(x_{ij})}{x_{ij}}''')
 
     df_saw_norm = df_valid.copy()
     X = df_saw_norm[kriteria].astype(float)
@@ -134,13 +185,18 @@ if st.button("Hitung SAW dan WP"):
             # Cost: min(x_j) / x_ij
             df_saw_norm[c] = X[c].min() / X[c]
 
+    # Tampilkan tabel normalisasi dengan nama kolom yang jelas dan format 3 desimal
     df_saw_norm_display = df_saw_norm.copy()
-    df_saw_norm_display.index = [f"A{i+1}" for i in range(len(df_valid))]
-
-    st.dataframe(df_saw_norm_display[kriteria])
+    df_saw_norm_display = df_saw_norm_display.rename(columns=nama_kriteria)
+    df_saw_norm_display.set_index("Alternatif", inplace=True)
+    df_saw_norm_display.columns.name = "Kriteria"
+    st.dataframe(df_saw_norm_display.apply(lambda x: x.map('{:.3f}'.format)), use_container_width=True)
 
     # --- Nilai Akhir SAW ---
-    st.subheader("Nilai Akhir SAW dan Ranking")
+    st.subheader("Tahap 2: Perhitungan Nilai Preferensi ($V_i$) dan Ranking")
+    st.markdown("Skor akhir untuk setiap alternatif ($V_i$) dihitung dengan menjumlahkan hasil kali normalisasi dan bobot kriteria:")
+    st.latex(r'''V_i = \sum_{j=1}^n w_j \cdot r_{ij}''')
+
 
     df_saw = df_saw_norm.copy()
     # Hitung Skor SAW: sum(R_ij * w_j)
@@ -148,42 +204,62 @@ if st.button("Hitung SAW dan WP"):
     df_saw = df_saw.sort_values("Skor_SAW", ascending=False)
     df_saw["Ranking"] = range(1, len(df_saw) + 1)
 
-    st.dataframe(df_saw[["Alternatif", "Skor_SAW", "Ranking"]])
+    # Tampilkan hasil SAW dengan Skor format 3 desimal
+    df_saw_result_display = df_saw[["Alternatif", "Skor_SAW", "Ranking"]].copy()
+    df_saw_result_display["Skor_SAW"] = df_saw_result_display["Skor_SAW"].map('{:.3f}'.format)
+    st.dataframe(df_saw_result_display.set_index("Alternatif"), use_container_width=True)
+
+    st.markdown("---")
 
     # ============================================================
     # -------------------------- WP ------------------------------
     # ============================================================
-    st.header("📗 Perhitungan Metode WP")
+    st.header("📗 Perhitungan Metode Weighted Product (WP)")
     
     df_wp = df_valid.copy()
     df_wp.set_index("Alternatif", inplace=True)
     X_wp = df_wp[kriteria].astype(float)
     
-    # 1. Hitung Vektor Bobot W (sudah tersedia di 'bobot')
-    bobot_array = np.array(list(bobot.values()))
-
+    # 1. Hitung Bobot W* (Di WP biasanya bobot w_j dibagi dengan sum bobot, tapi karena bobot w_j sudah dinormalisasi (sum=1), maka w_j = w*_j)
+    st.subheader("Tahap 1: Vektor Bobot")
+    st.markdown("Karena bobot kriteria ($w_j$) sudah dinormalisasi $(\sum w_j = 1)$, maka vektor bobot sudah tersedia.")
+    
     # 2. Hitung Vektor S_i: S_i = Product(X_ij^w_j)
-    st.subheader("Vektor Bobot dan Vektor $S_i$")
+    st.subheader("Tahap 2: Perhitungan Vektor $S_i$")
+    st.markdown("Nilai $S_i$ dihitung sebagai hasil kali nilai kriteria $x_{ij}$ yang dipangkatkan dengan bobot $w_j$:")
+    st.latex(r'''S_i = \prod_{j=1}^n x_{ij}^{w_j}''')
+
+    bobot_array = np.array(list(bobot.values()))
     
     # S_i = X_i1^w1 * X_i2^w2 * ... * X_in^wn
     S_i = (X_wp ** bobot_array).prod(axis=1)
     
-    # Tampilkan S_i dalam DataFrame
+    # Tampilkan S_i dalam DataFrame dengan format 4 desimal
     df_wp_result = pd.DataFrame(S_i, columns=["S_i"])
     df_wp_result.index.name = "Alternatif"
-    st.dataframe(df_wp_result)
+    df_wp_result["S_i"] = df_wp_result["S_i"].map('{:.4f}'.format)
+    st.dataframe(df_wp_result, use_container_width=True)
 
     # 3. Hitung Vektor V_i: V_i = S_i / Sum(S_k)
-    st.subheader("Nilai Preferensi $V_i$ dan Ranking")
-    
-    sum_S = S_i.sum()
-    V_i = S_i / sum_S
+    st.subheader("Tahap 3: Perhitungan Nilai Preferensi $V_i$ dan Ranking")
+    st.markdown("Nilai preferensi $V_i$ dihitung dengan membagi $S_i$ dengan total $S_k$ dari semua alternatif:")
+    st.latex(r'''V_i = \frac{S_i}{\sum_{k=1}^m S_k}''')
+
+    # Perhitungan ulang S_i untuk mendapatkan nilai float (karena yang di atas sudah di-map ke string)
+    S_i_float = (X_wp ** bobot_array).prod(axis=1)
+    sum_S = S_i_float.sum()
+    V_i = S_i_float / sum_S
     
     df_wp_result["Skor_WP"] = V_i
     df_wp_result = df_wp_result.sort_values("Skor_WP", ascending=False)
     df_wp_result["Ranking"] = range(1, len(df_wp_result) + 1)
     
-    st.dataframe(df_wp_result[["Skor_WP", "Ranking"]])
+    # Tampilkan hasil WP dengan Skor format 4 desimal
+    df_wp_final_display = df_wp_result[["Skor_WP", "Ranking"]].copy()
+    df_wp_final_display["Skor_WP"] = df_wp_final_display["Skor_WP"].map('{:.4f}'.format)
+    st.dataframe(df_wp_final_display, use_container_width=True)
+
+    st.markdown("---")
 
     # ============================================================
     # -------------- PERBANDINGAN RANKING SAW VS WP --------------
@@ -207,8 +283,10 @@ if st.button("Hitung SAW dan WP"):
     
     # Urutkan berdasarkan ranking SAW
     df_compare = df_compare.sort_values("Ranking_SAW").reset_index(drop=True)
-    
-    st.dataframe(df_compare)
+    df_compare.index = df_compare.index + 1 # Jadikan index sebagai no urut
+    df_compare.index.name = "No."
+
+    st.dataframe(df_compare, use_container_width=True)
     
     # Kesimpulan otomatis
     st.subheader("📌 Analisis Singkat Konsistensi Ranking")
@@ -216,12 +294,27 @@ if st.button("Hitung SAW dan WP"):
     jumlah_sama = sum(df_compare["Ranking_SAW"] == df_compare["Ranking_WP"])
     total_alt = len(df_compare)
     
+    st.markdown(f"Dari **{total_alt}** alternatif, terdapat **{jumlah_sama}** alternatif yang memiliki urutan ranking yang sama persis antara metode SAW dan WP.")
+
     if jumlah_sama == total_alt:
         st.success("🎉 **Kedua metode menghasilkan urutan ranking yang sama persis.** Ini menunjukkan konsistensi penuh antara SAW dan WP.")
     elif jumlah_sama > 0:
-        st.warning(f"⚠ **Sebagian alternatif memiliki ranking yang sama**, tetapi tidak semuanya.\n\n"
-                    f"- Jumlah peringkat yang sama: **{jumlah_sama}/{total_alt}**\n"
-                    f"- Ada perbedaan yang berarti antara metode SAW dan WP.")
+        st.info(f"**Terdapat perbedaan ranking pada beberapa alternatif** (Sebanyak {total_alt - jumlah_sama} alternatif mengalami perbedaan).")
     else:
         st.error("❗ **Tidak ada ranking yang sama antara SAW dan WP.** "
-                  "Ini menunjukkan kedua metode memberikan perspektif berbeda dalam evaluasi alternatif.")
+                  "Ini menunjukkan kedua metode memberikan perspektif berbeda yang signifikan dalam evaluasi alternatif.")
+
+    st.markdown("---")
+    # Tampilkan alternatif terbaik
+    alt_saw_terbaik = df_saw_rank.loc[df_saw_rank["Ranking_SAW"] == 1, "Alternatif"].iloc[0]
+    alt_wp_terbaik = df_wp_rank.loc[df_wp_rank["Ranking_WP"] == 1, "Alternatif"].iloc[0]
+
+    st.subheader("🏆 Kesimpulan Alternatif Terbaik")
+    if alt_saw_terbaik == alt_wp_terbaik:
+        st.balloons()
+        st.success(f"**Alternatif Terbaik** menurut kedua metode (SAW & WP) adalah **{alt_saw_terbaik}**.")
+    else:
+        st.warning(f"Alternatif terbaik berbeda antara kedua metode:")
+        st.markdown(f"* **SAW:** **{alt_saw_terbaik}**")
+        st.markdown(f"* **WP:** **{alt_wp_terbaik}**")
+        st.markdown("Perbedaan ini mungkin disebabkan oleh fokus WP yang mengalikan bobot kriteria (lebih sensitif terhadap nilai yang sangat rendah/tinggi) dibandingkan SAW yang menjumlahkan.")
