@@ -149,7 +149,7 @@ elif page=="Fuzzy WP":
     compare.plot(kind='bar', ax=ax)
     ax.set_ylabel("Score")
     st.pyplot(fig)
-    wp_saw = compare["SAW"].idxmax(); top_wp = compare["WP"].idxmax()
+    top_saw = compare["SAW"].idxmax(); top_wp = compare["WP"].idxmax()
     if top_saw == top_wp:
         st.success(f"Kedua metode memilih: {top_saw}")
     else:
