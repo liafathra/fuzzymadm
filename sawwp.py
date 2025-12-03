@@ -227,33 +227,55 @@ if st.button("🚀 Mulai Perhitungan SAW dan WP", type="primary"):
     # 2. Hitung Vektor S_i: S_i = Product(X_ij^w_j)
     st.subheader("Tahap 2: Perhitungan Vektor $S_i$")
     st.markdown("Nilai $S_i$ dihitung sebagai hasil kali nilai kriteria $x_{ij}$ yang dipangkatkan dengan bobot $w_j$:")
-    st.latex(r'''S_i = \prod_{j=1}^n x_{ij}^{w_j}''')
+    bobot_disesuaikan = {}
+    for c in kriteria:
+        if atribut[c] == "cost":
+            # Untuk cost, pangkatnya adalah -wj
+            bobot_disesuaikan[c] = -bobot[c]
+        else:
+            # Untuk benefit, pangkatnya adalah wj
+            bobot_disesuaikan[c] = bobot[c]
+        
+    bobot_array_wp = np.array(list(bobot_disesuaikan.values()))
+    
+    # Tampilkan bobot yang disesuaikan (Tambahan untuk kejelasan)
+    df_bobot_wp = pd.DataFrame({
+        "Kode": kriteria,
+        "Atribut": [atribut[c].capitalize() for c in kriteria],
+        "Bobot ($w_j$)": [bobot[c] for c in kriteria],
+        "Pangkat WP ($w^*_j$)": [f"{v:.2f}" for v in bobot_array_wp] # Format 2 desimal
+    })
+    st.dataframe(df_bobot_wp.set_index("Kode"), use_container_width=True)
 
-    bobot_array = np.array(list(bobot.values()))
-    
-    # S_i = X_i1^w1 * X_i2^w2 * ... * X_in^wn
-    S_i = (X_wp ** bobot_array).prod(axis=1)
-    
+    # 2. Hitung Vektor S_i: S_i = Product(X_ij^w*_j)
+    st.subheader("Tahap 2: Perhitungan Vektor $S_i$")
+    st.markdown("Nilai $S_i$ dihitung sebagai hasil kali nilai kriteria $x_{ij}$ yang dipangkatkan dengan bobot $w^*_j$:")
+    st.latex(r'''S_i = \prod_{j=1}^n x_{ij}^{w^*_j} \text{, di mana } w^*_j = \begin{cases} w_j & \text{untuk benefit} \\ -w_j & \text{untuk cost} \end{cases}''')
+       
+    # HITUNG S_i MENGGUNAKAN ARRAY BOBOT YANG SUDAH DISESUAIKAN
+    S_i = (X_wp ** bobot_array_wp).prod(axis=1)
+       
     # Tampilkan S_i dalam DataFrame dengan format 4 desimal
     df_wp_result = pd.DataFrame(S_i, columns=["S_i"])
     df_wp_result.index.name = "Alternatif"
+    # Simpan nilai float S_i sebelum di-map ke string untuk perhitungan selanjutnya
+    S_i_float = S_i.copy() 
     df_wp_result["S_i"] = df_wp_result["S_i"].map('{:.4f}'.format)
     st.dataframe(df_wp_result, use_container_width=True)
-
+    
     # 3. Hitung Vektor V_i: V_i = S_i / Sum(S_k)
     st.subheader("Tahap 3: Perhitungan Nilai Preferensi $V_i$ dan Ranking")
     st.markdown("Nilai preferensi $V_i$ dihitung dengan membagi $S_i$ dengan total $S_k$ dari semua alternatif:")
     st.latex(r'''V_i = \frac{S_i}{\sum_{k=1}^m S_k}''')
-
-    # Perhitungan ulang S_i untuk mendapatkan nilai float (karena yang di atas sudah di-map ke string)
-    S_i_float = (X_wp ** bobot_array).prod(axis=1)
+    
+    # Gunakan S_i_float untuk perhitungan V_i yang akurat
     sum_S = S_i_float.sum()
     V_i = S_i_float / sum_S
-    
+       
     df_wp_result["Skor_WP"] = V_i
     df_wp_result = df_wp_result.sort_values("Skor_WP", ascending=False)
     df_wp_result["Ranking"] = range(1, len(df_wp_result) + 1)
-    
+       
     # Tampilkan hasil WP dengan Skor format 4 desimal
     df_wp_final_display = df_wp_result[["Skor_WP", "Ranking"]].copy()
     df_wp_final_display["Skor_WP"] = df_wp_final_display["Skor_WP"].map('{:.4f}'.format)
