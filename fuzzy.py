@@ -149,11 +149,11 @@ elif page=="Fuzzy WP":
     compare.plot(kind='bar', ax=ax)
     ax.set_ylabel("Score")
     st.pyplot(fig)
-    top_saw = compare["SAW"].idxmax(); top_top = compare["TOPSIS"].idxmax()
-    if top_saw == top_top:
+    wp_saw = compare["SAW"].idxmax(); top_wp = compare["WP"].idxmax()
+    if top_saw == top_wp:
         st.success(f"Kedua metode memilih: {top_saw}")
     else:
-        st.info(f"SAW -> {top_saw}, WP -> {top_top}")
+        st.info(f"SAW -> {top_saw}, WP -> {top_wp}")
 elif page=="Tentang":
     st.header("Tentang")
-    st.write("Aplikasi untuk Projek MK Logika Fuzzy — Fuzzy SAW & TOPSIS. Dibuat untuk memilih Payment Gateway (UMKM).")
+    st.write("Aplikasi untuk Projek MK Logika Fuzzy — Fuzzy SAW & WP. Dibuat untuk memilih layanan Cloud Computing Terbaik.")
