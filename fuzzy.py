@@ -114,7 +114,7 @@ if page=="Home":
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.header("📘 Ringkasan Aplikasi")
     st.write("""
-    Aplikasi ini menggunakan metode **Fuzzy Simple Additive Weighting (SAW)** dan **Fuzzy WP (Weighted Product)**  
+    Aplikasi ini menggunakan metode **Fuzzy Simple Additive Weighting (SAW)** dan **Fuzzy Weighted Product (WP)**  
     untuk menentukan *Layanan Cloud Computing terbaik* berdasarkan empat kriteria:
 
     - 💰 **Biaya**  
