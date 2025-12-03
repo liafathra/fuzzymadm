@@ -6,9 +6,8 @@ st.set_page_config(page_title="SAW & WP Cloud Computing", layout="wide")
 st.title("Analisis Metode SAW & WP untuk Pemilihan Layanan Cloud Computing")
 
 # ============================================================
-# 1. DEFINISI KRITERIA (Disesuaikan dari Excel)
+# 1. DEFINISI KRITERIA (Sama seperti sebelumnya)
 # ============================================================
-# Kriteria: C1-C4 (Biaya, Kinerja, Keamanan, Skalabilitas)
 kriteria = ["C1", "C2", "C3", "C4"]
 nama_kriteria = {
     "C1": "Biaya",
@@ -22,27 +21,27 @@ atribut = {"C1": "cost", "C2": "benefit", "C3": "benefit", "C4": "benefit"}
 bobot = {"C1": 0.35, "C2": 0.30, "C3": 0.15, "C4": 0.20}
 
 # ============================================================
-# 2. FUNGSI KONVERSI NILAI CRIPS (Dibuat Sendiri Berdasarkan Data Excel)
+# 2. FUNGSI KONVERSI NILAI CRIPS (Disesuaikan ke 1, 2, 3, 4)
 # ============================================================
 def konversi_crips(kode, nilai):
     """
-    Konversi nilai crips (raw data) ke nilai bobot (40, 60, 80, 100).
+    Konversi nilai crips (raw data) ke nilai bobot (1, 2, 3, 4).
     """
     # C1 Biaya (Cost) - Input: Harga ($/bln)
-    # Rentang berdasarkan data: $50(100), $90/$100(80), $140/$150(60)
+    # Rentang Cost: Semakin rendah harga, semakin tinggi bobot (4)
     if kode == "C1":
-        if nilai <= 50: return 100 # Sangat Murah -> 100
-        if nilai <= 100: return 80 # Murah (50 < Harga <= 100) -> 80
-        if nilai <= 150: return 60 # Cukup Mahal (100 < Harga <= 150) -> 60
-        return 40 # Mahal/Sangat Mahal (Harga > 150) -> 40
+        if nilai <= 50: return 4 # Sangat Murah -> 4
+        if nilai <= 100: return 3 # Murah (50 < Harga <= 100) -> 3
+        if nilai <= 150: return 2 # Cukup Mahal (100 < Harga <= 150) -> 2
+        return 1 # Mahal/Sangat Mahal (Harga > 150) -> 1
 
     # C2, C3, C4 (Benefit) - Input: Skor (0-100)
-    # Rentang berdasarkan data: 90-100(100), 80-85(80), 60-65(60)
+    # Rentang Benefit: Semakin tinggi skor, semakin tinggi bobot (4)
     if kode in ["C2", "C3", "C4"]:
-        if nilai >= 90: return 100 # Sangat Baik (Skor >= 90) -> 100
-        if nilai >= 80: return 80  # Baik (80 <= Skor < 90) -> 80
-        if nilai >= 60: return 60  # Cukup (60 <= Skor < 80) -> 60
-        return 40 # Kurang (Skor < 60) -> 40
+        if nilai >= 90: return 4 # Sangat Baik (Skor >= 90) -> 4
+        if nilai >= 80: return 3  # Baik (80 <= Skor < 90) -> 3
+        if nilai >= 60: return 2  # Cukup (60 <= Skor < 80) -> 2
+        return 1 # Kurang (Skor < 60) -> 1
 
     return None
 
@@ -110,7 +109,7 @@ for i in range(jumlah_alt):
 # ============================================================
 if st.button("Hitung SAW dan WP"):
     df = pd.DataFrame(data_input, columns=["Alternatif"] + kriteria)
-    st.subheader("📌 Tabel Nilai Crips")
+    st.subheader("📌 Tabel Nilai Crips (1 - 4)")
     
     # Filter dan tampilkan hanya data dengan nilai crips valid
     df_valid = df.dropna(subset=kriteria)
@@ -161,7 +160,6 @@ if st.button("Hitung SAW dan WP"):
     X_wp = df_wp[kriteria].astype(float)
     
     # 1. Hitung Vektor Bobot W (sudah tersedia di 'bobot')
-    # Bobot sudah normalisasi, dan semua positif karena nilai crips (X_ij) sudah diubah menjadi Benefit.
     bobot_array = np.array(list(bobot.values()))
 
     # 2. Hitung Vektor S_i: S_i = Product(X_ij^w_j)
@@ -197,9 +195,9 @@ if st.button("Hitung SAW dan WP"):
     df_saw_rank.rename(columns={"Ranking": "Ranking_SAW"}, inplace=True)
     
     # Ambil ranking WP
+    df_wp_result.reset_index(inplace=True)
     df_wp_rank = df_wp_result.copy()
-    df_wp_rank.reset_index(inplace=True)
-    df_wp_rank.rename(columns={"index": "Alternatif", "Ranking": "Ranking_WP"}, inplace=True)
+    df_wp_rank.rename(columns={"Alternatif": "Alternatif", "Ranking": "Ranking_WP"}, inplace=True)
     
     # Gabungkan
     df_compare = pd.merge(df_saw_rank, df_wp_rank[["Alternatif", "Ranking_WP"]], on="Alternatif")
