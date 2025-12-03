@@ -70,7 +70,7 @@ with st.expander("Lihat Aturan Konversi Nilai Crips (1-4)"):
         st.subheader("C1: Biaya (Cost)")
         st.markdown("*(Semakin rendah harga, semakin tinggi Crips)*")
         df_crips_c1 = pd.DataFrame({
-            "Rentang Biaya ($/bulan)": ["Harga $\le \$50$", "Harga $\le \$100$", "Harga $\le \$150$", "Harga $>\$150$"],
+            "Rentang Biaya ($/bulan)": ["Harga <= $50", "Harga $51 - $100", "Harga $101 - $150", "Harga > $150"],
             "Nilai Crips": [4, 3, 2, 1]
         })
         st.dataframe(df_crips_c1, hide_index=True, use_container_width=True)
@@ -79,7 +79,7 @@ with st.expander("Lihat Aturan Konversi Nilai Crips (1-4)"):
         st.subheader("C2, C3, C4: Benefit")
         st.markdown("*(Semakin tinggi skor, semakin tinggi Crips)*")
         df_crips_cben = pd.DataFrame({
-            "Rentang Skor (0-100)": ["Skor $\ge 90$", "Skor $\ge 80$", "Skor $\ge 60$", "Skor $< 60$"],
+            "Rentang Skor (0-100)": ["Skor 90 - 100", "Skor 80 - 89", "Skor 60 - 79", "Skor < 60"],
             "Nilai Crips": [4, 3, 2, 1]
         })
         st.dataframe(df_crips_cben, hide_index=True, use_container_width=True)
@@ -106,7 +106,7 @@ for i in range(jumlah_alt):
     
     with col_b:
         c1_harga = st.number_input(
-            f"C1 Biaya ($\$/bln)",
+            f"C1 Biaya ($/bln)",
             min_value=0.0,
             step=1.0,
             format="%.2f",
