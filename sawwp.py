@@ -88,7 +88,7 @@ with input_container:
 
                 # C1 Biaya ($/bln)
                 c1_harga = st.number_input(
-                    f"C1: {nama_kriteria['C1']} ($\$/bulan)",
+                    f"C1: {nama_kriteria['C1']} ($/bulan)",
                     min_value=0.0,
                     step=1.0,
                     format="%.2f",
