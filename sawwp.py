@@ -242,8 +242,11 @@ if st.button("▶️ Mulai Perhitungan SAW dan WP"):
         st.info(
             f"Skor akhir WP ($V_i$) adalah hasil normalisasi $S_i$ terhadap total semua $S$: $V_i = S_i / \sum S_k$."
         )
-        df_wp_result.reset_index(inplace=True)
-        st.dataframe(df_wp_result[["Alternatif", "Skor_WP", "Ranking"]], hide_index=True, use_container_width=True)
+        
+        # PERBAIKAN: Mengganti df_wp_result.reset_index(inplace=True) dengan membuat DataFrame baru
+        df_wp_final_rank = df_wp_result.reset_index()
+
+        st.dataframe(df_wp_final_rank[["Alternatif", "Skor_WP", "Ranking"]], hide_index=True, use_container_width=True)
 
         st.markdown("---")
 
@@ -257,7 +260,7 @@ if st.button("▶️ Mulai Perhitungan SAW dan WP"):
         df_saw_rank.rename(columns={"Ranking": "Ranking_SAW"}, inplace=True)
         
         # Ambil ranking WP
-        df_wp_rank = df_wp_result.copy()
+        df_wp_rank = df_wp_final_rank.copy() # Menggunakan df_wp_final_rank yang sudah bersih
         df_wp_rank.rename(columns={"Ranking": "Ranking_WP"}, inplace=True)
         
         # Gabungkan
