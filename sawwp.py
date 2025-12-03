@@ -221,29 +221,30 @@ if st.button("🚀 Mulai Perhitungan SAW dan WP", type="primary"):
     X_wp = df_wp[kriteria].astype(float)
     
     # 1. Hitung Bobot W* (Pangkat WP)
-    st.subheader("Tahap 1: Vektor Bobot $W^*_j$")
+    st.subheader("Tahap 1: Vektor Bobot $W^*_j$ (Pangkat)")
     st.markdown("Bobot untuk kriteria **Cost** (C1: Biaya) harus **negatif**.")
-
-    # 2. Hitung Vektor S_i: S_i = Product(X_ij^w_j)
-    st.subheader("Tahap 2: Perhitungan Vektor $S_i$")
-    st.markdown("Nilai $S_i$ dihitung sebagai hasil kali nilai kriteria $x_{ij}$ yang dipangkatkan dengan bobot $w_j$:")
+    
+    # --------------------------------------------------------
+    # PERBAIKAN UTAMA DIMULAI DI SINI
+    # --------------------------------------------------------
+    # Buat array bobot yang disesuaikan untuk pangkat WP (W*)
     bobot_disesuaikan = {}
     for c in kriteria:
-        if atribut[c] == "benefit":
-            # Untuk cost, pangkatnya adalah -wj
-            bobot_disesuaikan[c] = bobot[c]
-        else:
-            # Untuk benefit, pangkatnya adalah wj
-            bobot_disesuaikan[c] = -bobot[c]
-        
+        if atribut[c] == "cost":
+            # Untuk cost, pangkatnya adalah -wj
+            bobot_disesuaikan[c] = -bobot[c]
+        else:
+            # Untuk benefit, pangkatnya adalah wj
+            bobot_disesuaikan[c] = bobot[c]
+    
     bobot_array_wp = np.array(list(bobot_disesuaikan.values()))
     
-    # Tampilkan bobot yang disesuaikan (Tambahan untuk kejelasan)
+    # Tampilkan bobot yang disesuaikan (Untuk kejelasan)
     df_bobot_wp = pd.DataFrame({
-        "Kode": kriteria,
-        "Atribut": [atribut[c].capitalize() for c in kriteria],
-        "Bobot ($w_j$)": [bobot[c] for c in kriteria],
-        "Pangkat WP ($w^*_j$)": [f"{v:.2f}" for v in bobot_array_wp] # Format 2 desimal
+        "Kode": kriteria,
+        "Atribut": [atribut[c].capitalize() for c in kriteria],
+        "Bobot ($w_j$)": [bobot[c] for c in kriteria],
+        "Pangkat WP ($w^*_j$)": [f"{v:.2f}" for v in bobot_array_wp]
     })
     st.dataframe(df_bobot_wp.set_index("Kode"), use_container_width=True)
 
@@ -251,92 +252,6 @@ if st.button("🚀 Mulai Perhitungan SAW dan WP", type="primary"):
     st.subheader("Tahap 2: Perhitungan Vektor $S_i$")
     st.markdown("Nilai $S_i$ dihitung sebagai hasil kali nilai kriteria $x_{ij}$ yang dipangkatkan dengan bobot $w^*_j$:")
     st.latex(r'''S_i = \prod_{j=1}^n x_{ij}^{w^*_j} \text{, di mana } w^*_j = \begin{cases} w_j & \text{untuk benefit} \\ -w_j & \text{untuk cost} \end{cases}''')
-       
-    # HITUNG S_i MENGGUNAKAN ARRAY BOBOT YANG SUDAH DISESUAIKAN
+    
+    # HITUNG S_i MENGGUNAKAN ARRAY BOBOT YANG SUDAH DISESUAIKAN (bobot_array_wp)
     S_i = (X_wp ** bobot_array_wp).prod(axis=1)
-       
-    # Tampilkan S_i dalam DataFrame dengan format 4 desimal
-    df_wp_result = pd.DataFrame(S_i, columns=["S_i"])
-    df_wp_result.index.name = "Alternatif"
-    # Simpan nilai float S_i sebelum di-map ke string untuk perhitungan selanjutnya
-    S_i_float = S_i.copy() 
-    df_wp_result["S_i"] = df_wp_result["S_i"].map('{:.4f}'.format)
-    st.dataframe(df_wp_result, use_container_width=True)
-    
-    # 3. Hitung Vektor V_i: V_i = S_i / Sum(S_k)
-    st.subheader("Tahap 3: Perhitungan Nilai Preferensi $V_i$ dan Ranking")
-    st.markdown("Nilai preferensi $V_i$ dihitung dengan membagi $S_i$ dengan total $S_k$ dari semua alternatif:")
-    st.latex(r'''V_i = \frac{S_i}{\sum_{k=1}^m S_k}''')
-    
-    # Gunakan S_i_float untuk perhitungan V_i yang akurat
-    sum_S = S_i_float.sum()
-    V_i = S_i_float / sum_S
-       
-    df_wp_result["Skor_WP"] = V_i
-    df_wp_result = df_wp_result.sort_values("Skor_WP", ascending=False)
-    df_wp_result["Ranking"] = range(1, len(df_wp_result) + 1)
-       
-    # Tampilkan hasil WP dengan Skor format 4 desimal
-    df_wp_final_display = df_wp_result[["Skor_WP", "Ranking"]].copy()
-    df_wp_final_display["Skor_WP"] = df_wp_final_display["Skor_WP"].map('{:.4f}'.format)
-    st.dataframe(df_wp_final_display, use_container_width=True)
-
-    st.markdown("---")
-
-    # ============================================================
-    # -------------- PERBANDINGAN RANKING SAW VS WP --------------
-    # ============================================================
-    st.header("📊 Perbandingan Hasil Ranking SAW dan WP")
-    
-    # Ambil ranking SAW
-    df_saw_rank = df_saw[["Alternatif", "Ranking"]].copy()
-    df_saw_rank.rename(columns={"Ranking": "Ranking_SAW"}, inplace=True)
-    
-    # Ambil ranking WP
-    df_wp_result.reset_index(inplace=True)
-    df_wp_rank = df_wp_result.copy()
-    df_wp_rank.rename(columns={"Alternatif": "Alternatif", "Ranking": "Ranking_WP"}, inplace=True)
-    
-    # Gabungkan
-    df_compare = pd.merge(df_saw_rank, df_wp_rank[["Alternatif", "Ranking_WP"]], on="Alternatif")
-    
-    # Hitung selisih peringkat
-    df_compare["Selisih"] = df_compare["Ranking_WP"] - df_compare["Ranking_SAW"]
-    
-    # Urutkan berdasarkan ranking SAW
-    df_compare = df_compare.sort_values("Ranking_SAW").reset_index(drop=True)
-    df_compare.index = df_compare.index + 1 # Jadikan index sebagai no urut
-    df_compare.index.name = "No."
-
-    st.dataframe(df_compare, use_container_width=True)
-    
-    # Kesimpulan otomatis
-    st.subheader("📌 Analisis Singkat Konsistensi Ranking")
-    
-    jumlah_sama = sum(df_compare["Ranking_SAW"] == df_compare["Ranking_WP"])
-    total_alt = len(df_compare)
-    
-    st.markdown(f"Dari **{total_alt}** alternatif, terdapat **{jumlah_sama}** alternatif yang memiliki urutan ranking yang sama persis antara metode SAW dan WP.")
-
-    if jumlah_sama == total_alt:
-        st.success("🎉 **Kedua metode menghasilkan urutan ranking yang sama persis.** Ini menunjukkan konsistensi penuh antara SAW dan WP.")
-    elif jumlah_sama > 0:
-        st.info(f"**Terdapat perbedaan ranking pada beberapa alternatif** (Sebanyak {total_alt - jumlah_sama} alternatif mengalami perbedaan).")
-    else:
-        st.error("❗ **Tidak ada ranking yang sama antara SAW dan WP.** "
-                  "Ini menunjukkan kedua metode memberikan perspektif berbeda yang signifikan dalam evaluasi alternatif.")
-
-    st.markdown("---")
-    # Tampilkan alternatif terbaik
-    alt_saw_terbaik = df_saw_rank.loc[df_saw_rank["Ranking_SAW"] == 1, "Alternatif"].iloc[0]
-    alt_wp_terbaik = df_wp_rank.loc[df_wp_rank["Ranking_WP"] == 1, "Alternatif"].iloc[0]
-
-    st.subheader("🏆 Kesimpulan Alternatif Terbaik")
-    if alt_saw_terbaik == alt_wp_terbaik:
-        st.balloons()
-        st.success(f"**Alternatif Terbaik** menurut kedua metode (SAW & WP) adalah **{alt_saw_terbaik}**.")
-    else:
-        st.warning(f"Alternatif terbaik berbeda antara kedua metode:")
-        st.markdown(f"* **SAW:** **{alt_saw_terbaik}**")
-        st.markdown(f"* **WP:** **{alt_wp_terbaik}**")
-        st.markdown("Perbedaan ini mungkin disebabkan oleh fokus WP yang mengalikan bobot kriteria (lebih sensitif terhadap nilai yang sangat rendah/tinggi) dibandingkan SAW yang menjumlahkan.")
