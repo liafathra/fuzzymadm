@@ -220,21 +220,21 @@ if st.button("🚀 Mulai Perhitungan SAW dan WP", type="primary"):
     df_wp.set_index("Alternatif", inplace=True)
     X_wp = df_wp[kriteria].astype(float)
     
-    # 1. Hitung Bobot W* (Di WP biasanya bobot w_j dibagi dengan sum bobot, tapi karena bobot w_j sudah dinormalisasi (sum=1), maka w_j = w*_j)
-    st.subheader("Tahap 1: Vektor Bobot")
-    st.markdown("Karena bobot kriteria ($w_j$) sudah dinormalisasi $(\sum w_j = 1)$, maka vektor bobot sudah tersedia.")
-    
+    # 1. Hitung Bobot W* (Pangkat WP)
+    st.subheader("Tahap 1: Vektor Bobot $W^*_j$")
+    st.markdown("Bobot untuk kriteria **Cost** (C1: Biaya) harus **negatif**.")
+
     # 2. Hitung Vektor S_i: S_i = Product(X_ij^w_j)
     st.subheader("Tahap 2: Perhitungan Vektor $S_i$")
     st.markdown("Nilai $S_i$ dihitung sebagai hasil kali nilai kriteria $x_{ij}$ yang dipangkatkan dengan bobot $w_j$:")
     bobot_disesuaikan = {}
     for c in kriteria:
-        if atribut[c] == "cost":
+        if atribut[c] == "benefit":
             # Untuk cost, pangkatnya adalah -wj
-            bobot_disesuaikan[c] = -bobot[c]
+            bobot_disesuaikan[c] = bobot[c]
         else:
             # Untuk benefit, pangkatnya adalah wj
-            bobot_disesuaikan[c] = bobot[c]
+            bobot_disesuaikan[c] = -bobot[c]
         
     bobot_array_wp = np.array(list(bobot_disesuaikan.values()))
     
