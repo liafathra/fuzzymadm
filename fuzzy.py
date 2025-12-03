@@ -114,8 +114,8 @@ if page=="Home":
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.header("📘 Ringkasan Aplikasi")
     st.write("""
-    Aplikasi ini menggunakan metode **Fuzzy SAW** dan **Fuzzy WP (Weighted Product)**  
-    untuk menentukan *layanan Cloud Computing terbaik* berdasarkan empat kriteria:
+    Aplikasi ini menggunakan metode **Fuzzy Simple Additive Weighting (SAW)** dan **Fuzzy WP (Weighted Product)**  
+    untuk menentukan *Layanan Cloud Computing terbaik* berdasarkan empat kriteria:
 
     - 💰 **Biaya**  
     - ⚡ **Kinerja**  
@@ -230,8 +230,8 @@ elif page=="Tentang":
     st.markdown("""
     Aplikasi ini dibuat untuk kebutuhan **Projek Akhir Mata Kuliah Logika Fuzzy**  
     dengan topik *Fuzzy Multiple Attribute Decision Making (MADM)* —  
-    menggunakan metode **Fuzzy SAW** dan **Weighted Product (WP)**.
+    menggunakan metode **Fuzzy Simple Additive Weighting (SAW)** dan **Weighted Product (WP)**.
 
-    Dibuat dengan ❤️ menggunakan **Python + Streamlit**.
+    Dibuat menggunakan **Python + Streamlit**.
     """)
 
