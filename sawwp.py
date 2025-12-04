@@ -29,7 +29,7 @@ df_kriteria = pd.DataFrame({
     "Kode": kriteria,
     "Nama Kriteria": [nama_kriteria[c] for c in kriteria],
     "Atribut": [atribut[c].capitalize() for c in kriteria],
-    "Bobot ($w_j$)": [bobot[c] for c in kriteria]
+    "Bobot": [bobot[c] for c in kriteria]
 })
 st.dataframe(df_kriteria.set_index("Kode"), use_container_width=True)
 
