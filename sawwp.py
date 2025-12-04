@@ -247,8 +247,8 @@ if st.button("🚀 Mulai Perhitungan SAW dan WP", type="primary"):
     df_bobot_wp = pd.DataFrame({
         "Kode": kriteria,
         "Atribut": [atribut[c].capitalize() for c in kriteria],
-        "Bobot ($w_j$)": [bobot[c] for c in kriteria],
-        "Pangkat WP ($w^*_j$)": [f"{v:.2f}" for v in bobot_array_wp]
+        "Bobot": [bobot[c] for c in kriteria],
+        "Pangkat WP": [f"{v:.2f}" for v in bobot_array_wp]
     })
     st.dataframe(df_bobot_wp.set_index("Kode"), use_container_width=True)
 
